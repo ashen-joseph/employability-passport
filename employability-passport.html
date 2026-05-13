@@ -676,6 +676,96 @@
     }
     .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
     .empty-state p { font-size: 1rem; }
+
+    /* ── LANDING SCREEN ────────────────────────────────────────── */
+    .landing-view { display: flex; flex-direction: column; flex: 1; }
+    .landing-hero {
+      background: var(--blue); padding: 72px 24px 80px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .landing-hero::before {
+      content: ''; position: absolute;
+      top: -60px; right: -80px; width: 320px; height: 320px;
+      border-radius: 50%; background: rgba(233,196,59,0.07); pointer-events: none;
+    }
+    .landing-hero::after {
+      content: ''; position: absolute;
+      bottom: -80px; left: -60px; width: 260px; height: 260px;
+      border-radius: 50%; background: rgba(233,196,59,0.05); pointer-events: none;
+    }
+    .landing-eyebrow {
+      font-size: 0.7rem; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 6px;
+    }
+    .landing-school {
+      font-size: 1.1rem; font-weight: 700;
+      color: rgba(255,255,255,0.9); margin-bottom: 24px;
+    }
+    .landing-title {
+      font-size: 3.2rem; font-weight: 900; color: var(--white);
+      line-height: 1.08; margin-bottom: 16px; position: relative; z-index: 1;
+    }
+    .landing-title-accent { color: var(--gold); display: block; }
+    .landing-desc {
+      font-size: 1rem; color: rgba(255,255,255,0.65);
+      max-width: 420px; margin: 0 auto; line-height: 1.65; position: relative; z-index: 1;
+    }
+    .landing-body {
+      background: var(--sand); padding: 44px 24px 40px;
+      display: flex; flex-direction: column; align-items: center; flex: 1;
+    }
+    .landing-card {
+      width: 100%; max-width: 440px; background: var(--white);
+      border-radius: 20px; padding: 36px; box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+    }
+    .landing-card-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #9ca3af; margin-bottom: 18px; text-align: center;
+    }
+    .btn-landing-register {
+      display: block; width: 100%; background: var(--blue); color: var(--white);
+      border: none; border-radius: 12px; padding: 16px 24px;
+      font-size: 1rem; font-weight: 800; font-family: 'Montserrat', sans-serif;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 12px;
+    }
+    .btn-landing-register:hover {
+      background: #1a5090; transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(13,56,99,0.25);
+    }
+    .btn-landing-register:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+    .btn-landing-login {
+      display: block; width: 100%; background: var(--gold); color: var(--blue);
+      border: none; border-radius: 12px; padding: 16px 24px;
+      font-size: 1rem; font-weight: 800; font-family: 'Montserrat', sans-serif;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-landing-login:hover {
+      background: #f0d040; transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(233,196,59,0.35);
+    }
+    .btn-landing-login:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+    .landing-or {
+      text-align: center; color: #9ca3af; font-size: 0.82rem;
+      margin: 10px 0; display: flex; align-items: center; gap: 10px;
+    }
+    .landing-or::before, .landing-or::after {
+      content: ''; flex: 1; height: 1px; background: #e5e7eb;
+    }
+    .form-hint {
+      text-align: center; font-size: 0.82rem; color: #9ca3af; margin-top: 16px;
+    }
+    .form-hint button {
+      background: none; border: none; color: var(--blue);
+      font-weight: 700; cursor: pointer; font-family: inherit;
+      font-size: inherit; text-decoration: underline; padding: 0;
+    }
+    .form-hint button:hover { color: #1a5090; }
+    @media (max-width: 480px) {
+      .landing-title { font-size: 2.2rem; }
+      .landing-hero  { padding: 52px 24px 60px; }
+      .landing-card  { padding: 24px; }
+    }
   </style>
 </head>
 <body>
@@ -695,12 +785,39 @@
     </div>
   </header>
 
+  <!-- ── VIEW: LANDING ───────────────────────────────────────── -->
+  <div id="viewLanding" class="view active">
+    <div class="landing-view">
+      <div class="landing-hero">
+        <div class="landing-eyebrow">University of Buckingham</div>
+        <div class="landing-school">Business School</div>
+        <h1 class="landing-title">
+          Employability
+          <span class="landing-title-accent">Passport</span>
+        </h1>
+        <p class="landing-desc">Track your professional development and showcase your achievements throughout your degree.</p>
+      </div>
+      <div class="landing-body">
+        <div class="landing-card">
+          <div class="landing-card-label">Get started</div>
+          <button id="btnGoRegister" class="btn-landing-register">
+            Register as a New Student
+          </button>
+          <div class="landing-or">or</div>
+          <button id="btnGoLogin" class="btn-landing-login">
+            Student Login
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── VIEW: REGISTER ──────────────────────────────────────── -->
-  <div id="viewRegister" class="view active">
+  <div id="viewRegister" class="view">
     <div class="page-content narrow">
       <div class="reg-hero">
-        <h2>Your Employability Passport</h2>
-        <p>Track your professional development journey through the University of Buckingham Business School's badge framework.</p>
+        <h2>Create Your Account</h2>
+        <p>Register to start tracking your employability journey at the University of Buckingham Business School.</p>
       </div>
       <div class="reg-card">
         <form id="regForm" novalidate>
@@ -719,8 +836,36 @@
             </select>
           </div>
           <p id="regError" style="color:#ef4444; font-size:0.88rem; margin-bottom:12px; min-height:1.2em;"></p>
-          <button type="submit" class="btn-passport">Access My Passport</button>
+          <button type="submit" class="btn-passport">Register</button>
         </form>
+        <div class="form-hint">
+          Already registered? <button id="btnRegToLogin">Log in here</button>
+        </div>
+        <button id="btnBackFromRegister" class="btn-back">← Back to Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VIEW: STUDENT LOGIN ──────────────────────────────────── -->
+  <div id="viewStudentLogin" class="view">
+    <div class="page-content narrow">
+      <div class="reg-hero">
+        <h2>Welcome Back</h2>
+        <p>Enter your Student ID to access your Employability Passport.</p>
+      </div>
+      <div class="reg-card">
+        <form id="studentLoginForm" novalidate>
+          <div class="form-group">
+            <label for="loginStudentId">Student ID</label>
+            <input type="text" id="loginStudentId" class="form-control" placeholder="e.g. 1234567" autocomplete="off" required />
+          </div>
+          <p id="loginStudentError" style="color:#ef4444; font-size:0.88rem; margin-bottom:12px; min-height:1.2em;"></p>
+          <button type="submit" class="btn-passport">Log In</button>
+        </form>
+        <div class="form-hint">
+          New student? <button id="btnLoginToRegister">Register here</button>
+        </div>
+        <button id="btnBackFromStudentLogin" class="btn-back">← Back to Home</button>
       </div>
     </div>
   </div>
@@ -1393,7 +1538,7 @@
 
   function renderPassport() {
     const student = getCurrentStudent();
-    if (!student) { showView('register'); return; }
+    if (!student) { showView('landing'); return; }
     checkStageUnlocks(student);
     renderProgressSummary(student);
     renderBadgeGrid(student);
@@ -1925,7 +2070,7 @@
       showView('passport');
       renderPassport();
     } else {
-      showView('register');
+      showView('landing');
     }
     updateFooter();
 
@@ -1942,17 +2087,12 @@
       if (!prog) { errEl.textContent = 'Please select your programme.'; return; }
       errEl.textContent = '';
 
-      // Existing student?
+      // Block duplicate Student IDs — direct to login instead
       const existing = state.students.find(
         s => s.studentId.toLowerCase() === sid.toLowerCase()
       );
       if (existing) {
-        state.currentStudentId = existing.id;
-        saveState();
-        showView('passport');
-        renderPassport();
-        showToast('Welcome back, ' + existing.name + '!', 'success');
-        updateFooter();
+        errEl.textContent = 'That Student ID is already registered. Please use the Login option instead.';
         return;
       }
 
@@ -1971,7 +2111,7 @@
       saveState();
       showView('passport');
       renderPassport();
-      showToast('Welcome, ' + name + '!', 'success');
+      showToast('Welcome to your Employability Passport, ' + name + '!', 'success');
       updateFooter();
     });
 
@@ -1991,7 +2131,7 @@
       document.getElementById('adminUser').value = '';
       document.getElementById('adminPass').value = '';
       const student = getCurrentStudent();
-      showView(student ? 'passport' : 'register');
+      showView(student ? 'passport' : 'landing');
     });
 
     /* Logout */
@@ -2002,7 +2142,7 @@
       badge.textContent   = '';
       const student = getCurrentStudent();
       if (student) { showView('passport'); renderPassport(); }
-      else          { showView('register'); }
+      else          { showView('landing'); }
       updateFooter();
       showToast('Logged out.');
     });
@@ -2019,17 +2159,79 @@
     document.getElementById('btnStudentLogout').addEventListener('click', () => {
       state.currentStudentId = null;
       saveState();
-      showView('register');
-      renderRegister();
+      showView('landing');
+      updateFooter();
     });
 
     /* Switch student (footer) */
     document.getElementById('btnSwitchStudent').addEventListener('click', () => {
       state.currentStudentId = null;
       saveState();
-      showView('register');
-      renderRegister();
+      showView('landing');
       updateFooter();
+    });
+
+    /* Landing screen: go to registration */
+    document.getElementById('btnGoRegister').addEventListener('click', () => {
+      renderRegister();
+      showView('register');
+    });
+
+    /* Landing screen: go to student login */
+    document.getElementById('btnGoLogin').addEventListener('click', () => {
+      document.getElementById('loginStudentId').value = '';
+      document.getElementById('loginStudentError').textContent = '';
+      showView('studentLogin');
+    });
+
+    /* Registration form: back to landing */
+    document.getElementById('btnBackFromRegister').addEventListener('click', () => {
+      showView('landing');
+    });
+
+    /* Registration form: cross-link to login */
+    document.getElementById('btnRegToLogin').addEventListener('click', () => {
+      document.getElementById('loginStudentId').value = '';
+      document.getElementById('loginStudentError').textContent = '';
+      showView('studentLogin');
+    });
+
+    /* Student login form */
+    document.getElementById('studentLoginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const sid   = document.getElementById('loginStudentId').value.trim();
+      const errEl = document.getElementById('loginStudentError');
+
+      if (!sid) { errEl.textContent = 'Please enter your Student ID.'; return; }
+      errEl.textContent = '';
+
+      const student = state.students.find(
+        s => s.studentId.toLowerCase() === sid.toLowerCase()
+      );
+      if (!student) {
+        errEl.textContent = 'No account found with that Student ID. Please register first.';
+        return;
+      }
+
+      state.currentStudentId = student.id;
+      saveState();
+      showView('passport');
+      renderPassport();
+      showToast('Welcome back, ' + student.name + '!', 'success');
+      updateFooter();
+    });
+
+    /* Student login form: back to landing */
+    document.getElementById('btnBackFromStudentLogin').addEventListener('click', () => {
+      document.getElementById('loginStudentId').value = '';
+      document.getElementById('loginStudentError').textContent = '';
+      showView('landing');
+    });
+
+    /* Student login form: cross-link to registration */
+    document.getElementById('btnLoginToRegister').addEventListener('click', () => {
+      renderRegister();
+      showView('register');
     });
 
     /* Admin tab buttons */
