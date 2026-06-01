@@ -766,6 +766,35 @@
       .landing-hero  { padding: 52px 24px 60px; }
       .landing-card  { padding: 24px; }
     }
+
+    /* ── LOADING OVERLAY ────────────────────────────────────────── */
+    .loading-overlay {
+      position: fixed; inset: 0; z-index: 9990;
+      background: rgba(13,56,99,0.72);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .loading-overlay.active { opacity: 1; pointer-events: all; }
+    .loading-inner {
+      background: #fff; border-radius: 16px;
+      padding: 36px 52px; text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.28);
+      min-width: 220px;
+    }
+    .loading-spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #E9C43B;
+      border-radius: 50%;
+      animation: paSpinAnim 0.75s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes paSpinAnim { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 0.95rem; font-weight: 600;
+      color: #0D3863; font-family: 'Montserrat', sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -961,8 +990,24 @@
   <!-- ── TOAST ───────────────────────────────────────────────── -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- ── LOADING OVERLAY ─────────────────────────────────────── -->
+  <div id="loadingOverlay" class="loading-overlay" role="status" aria-hidden="true" aria-live="assertive">
+    <div class="loading-inner">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div class="loading-text" id="loadingText">Please wait…</div>
+    </div>
+  </div>
+
   <script>
   'use strict';
+
+  /* ═══════════════════════════════════════════════════════════════
+     POWER AUTOMATE URLS — UPDATE HERE IF ENDPOINTS CHANGE
+     ═══════════════════════════════════════════════════════════════ */
+  const PA_REGISTER_URL = 'https://defaulteba4640024e64c07a7c6cc061e0f8d.26.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/6c69fd3ba94f4a9bb44dfbea4cd30b6c/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=6dvWpsBf5hPCUrztMspv2oqtbF0ONO_1WF-XKyazif4';
+  const PA_BADGE_URL    = 'https://defaulteba4640024e64c07a7c6cc061e0f8d.26.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/83a6f116183c42d3b7212f93757fce82/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=tOFcLrA3TyE4N_2mb6ygLUjuafR_PafuMCW0G9CfTps';
+  const PA_GET_DATA_URL = 'https://defaulteba4640024e64c07a7c6cc061e0f8d.26.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f8441568f3014e32b8196ef943bd13d3/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=vu1DsOLJYhVWFAs3KV5NQFHz4R7t27TWVfvI9h1a2Os';
+  const PA_CERT_URL     = 'https://defaulteba4640024e64c07a7c6cc061e0f8d.26.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/e9ca9726ec984f41892bed7bedcb4f6a/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xAWX7hfrmwjXZwD5WQOzQW0bC7gYh4ssEpMeONv1u2U';
 
   /* ═══════════════════════════════════════════════════════════════
      PROGRAMME LIST — ADD OR REMOVE PROGRAMMES HERE
@@ -1259,6 +1304,56 @@
     } catch (e) { /* ignore storage errors */ }
   }
 
+  /* ── POWER AUTOMATE API HELPERS ─────────────────────────────── */
+
+  function showLoading(msg) {
+    const overlay = document.getElementById('loadingOverlay');
+    const text    = document.getElementById('loadingText');
+    if (text)    text.textContent = msg || 'Please wait…';
+    if (overlay) { overlay.classList.add('active'); overlay.setAttribute('aria-hidden', 'false'); }
+  }
+
+  function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) { overlay.classList.remove('active'); overlay.setAttribute('aria-hidden', 'true'); }
+  }
+
+  /* POST JSON to a Power Automate instant-trigger URL.
+     Resolves with the parsed response body (or {}).
+     Rejects with an Error whose message describes what went wrong. */
+  async function callPA(url, body) {
+    let response;
+    try {
+      response = await fetch(url, {
+        method:  'POST',
+        mode:    'cors',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body:    JSON.stringify(body)
+      });
+    } catch (networkErr) {
+      /* Catches CORS / network-unreachable errors */
+      throw new Error('Network error — ' + (networkErr.message || 'could not reach the server'));
+    }
+    if (!response.ok) {
+      throw new Error('Server returned ' + response.status + ' ' + response.statusText);
+    }
+    const text = await response.text();
+    try { return text ? JSON.parse(text) : {}; }
+    catch (_) { return {}; }   /* PA sometimes returns non-JSON on success */
+  }
+
+  /* Fire-and-forget: notify Power Automate that a stage cert was unlocked.
+     Failures are logged to the console but never surfaced to the student. */
+  function notifyCertificateUnlock(student, stage) {
+    callPA(PA_CERT_URL, {
+      studentId:       student.studentId,
+      certificateName: stage.certTitle,
+      unlockedDate:    new Date().toISOString()
+    }).catch(err => {
+      console.warn('[Passport] Certificate notification failed (non-blocking):', err.message);
+    });
+  }
+
   let state        = loadState();
   let adminSession = null;
   let currentView  = null;
@@ -1314,6 +1409,8 @@
       if (unlocked && !student.stageCertDates[stage.key]) {
         student.stageCertDates[stage.key] = new Date().toISOString();
         changed = true;
+        /* Silently notify Power Automate — fire-and-forget, no UI impact */
+        notifyCertificateUnlock(student, stage);
       }
     });
     if (changed) saveState();
@@ -2075,7 +2172,7 @@
     updateFooter();
 
     /* Registration form */
-    document.getElementById('regForm').addEventListener('submit', function(e) {
+    document.getElementById('regForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const name  = document.getElementById('regName').value.trim();
       const sid   = document.getElementById('regStudentId').value.trim();
@@ -2096,7 +2193,24 @@
         return;
       }
 
-      // New student
+      // POST to Power Automate — must succeed before we proceed
+      showLoading('Creating your account…');
+      try {
+        await callPA(PA_REGISTER_URL, {
+          studentId:        sid,
+          fullName:         name,
+          programme:        prog,
+          registrationDate: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('[Passport] Registration API call failed:', err.message);
+        hideLoading();
+        errEl.textContent = 'Registration could not be completed. Please check your connection and try again.';
+        return;
+      }
+      hideLoading();
+
+      // Also save to localStorage as a local cache
       const newStudent = {
         id:             genId(),
         name:           name,
@@ -2197,7 +2311,7 @@
     });
 
     /* Student login form */
-    document.getElementById('studentLoginForm').addEventListener('submit', function(e) {
+    document.getElementById('studentLoginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const sid   = document.getElementById('loginStudentId').value.trim();
       const errEl = document.getElementById('loginStudentError');
@@ -2205,20 +2319,60 @@
       if (!sid) { errEl.textContent = 'Please enter your Student ID.'; return; }
       errEl.textContent = '';
 
-      const student = state.students.find(
+      /* ── Fast path: check localStorage first ── */
+      const cached = state.students.find(
         s => s.studentId.toLowerCase() === sid.toLowerCase()
       );
-      if (!student) {
-        errEl.textContent = 'No account found with that Student ID. Please register first.';
+      if (cached) {
+        state.currentStudentId = cached.id;
+        saveState();
+        showView('passport');
+        renderPassport();
+        showToast('Welcome back, ' + cached.name + '!', 'success');
+        updateFooter();
         return;
       }
 
-      state.currentStudentId = student.id;
-      saveState();
-      showView('passport');
-      renderPassport();
-      showToast('Welcome back, ' + student.name + '!', 'success');
-      updateFooter();
+      /* ── Slow path: not in cache — try fetching from Power Automate ── */
+      showLoading('Retrieving your passport…');
+      try {
+        const data = await callPA(PA_GET_DATA_URL, { studentId: sid });
+
+        /* PA returns the student record if found, or an empty / {found:false} body */
+        const hasData = data && data.found !== false &&
+                        (data.fullName || data.name || data.studentId);
+        if (!hasData) {
+          hideLoading();
+          errEl.textContent = 'No account found with that Student ID. Please register first.';
+          return;
+        }
+
+        /* Reconstruct a local student object from what PA returned */
+        const fetched = {
+          id:             genId(),
+          name:           data.fullName || data.name || 'Student',
+          studentId:      data.studentId || sid,
+          programme:      data.programme || '',
+          registeredAt:   data.registrationDate || new Date().toISOString(),
+          badges:         data.badges         || defaultBadges(),
+          stageCertDates: data.stageCertDates || { stage1: null, stage2: null, stage3: null }
+        };
+
+        /* Cache locally so future logins are instant */
+        state.students.push(fetched);
+        state.currentStudentId = fetched.id;
+        saveState();
+        hideLoading();
+        showView('passport');
+        renderPassport();
+        showToast('Welcome back, ' + fetched.name + '!', 'success');
+        updateFooter();
+
+      } catch (err) {
+        console.error('[Passport] Login fetch failed:', err.message);
+        hideLoading();
+        errEl.textContent = 'No account found with that Student ID. Please register first.';
+      }
     });
 
     /* Student login form: back to landing */
@@ -2285,15 +2439,17 @@
     });
 
     /* Students tab: award badge button */
-    document.getElementById('tabStudents').addEventListener('click', e => {
+    document.getElementById('tabStudents').addEventListener('click', async e => {
+      /* Ignore clicks that actually belong to the Save Changes button */
+      if (e.target.closest('.btn-save-edit')) return;
       const btn = e.target.closest('.btn-award');
       if (!btn) return;
       const sid = btn.dataset.studentId;
       if (!sid) return;
 
-      const selectEl  = document.getElementById('awardBadgeSelect_' + sid);
-      const noteEl    = document.getElementById('awardNote_' + sid);
-      const msgEl     = document.getElementById('awardMsg_' + sid);
+      const selectEl = document.getElementById('awardBadgeSelect_' + sid);
+      const noteEl   = document.getElementById('awardNote_' + sid);
+      const msgEl    = document.getElementById('awardMsg_' + sid);
       if (!selectEl || !msgEl) return;
 
       const badgeId = selectEl.value;
@@ -2304,14 +2460,47 @@
         return;
       }
 
-      const result = awardBadge(sid, badgeId, adminSession, note);
-      if (result.success) {
-        msgEl.innerHTML = `<div class="award-success">✓ ${esc(result.tierLabel)} badge awarded successfully!</div>`;
-        showToast(result.tierLabel + ' badge awarded!', 'success');
-        const searchInput = document.getElementById('studentSearch');
-        setTimeout(() => renderTabStudents(searchInput ? searchInput.value : ''), 900);
-      } else {
-        msgEl.innerHTML = `<div class="award-error">${esc(result.error)}</div>`;
+      /* Pre-flight check — validate before hitting the network */
+      const student = state.students.find(s => s.id === sid);
+      if (!student) return;
+      const badge = BADGES.find(b => b.id === badgeId);
+      if (!badge)  return;
+      const currentLevel = student.badges[badgeId] || 0;
+      if (currentLevel >= 3) {
+        msgEl.innerHTML = '<div class="award-error">Maximum tier already achieved for this badge.</div>';
+        return;
+      }
+      const newLevel  = currentLevel + 1;
+      const tierLabel = tierName(newLevel);
+
+      btn.disabled = true;
+      showLoading('Saving badge award…');
+
+      try {
+        /* POST to Power Automate — must succeed before we update local state */
+        await callPA(PA_BADGE_URL, {
+          studentId:   student.studentId,
+          badgeName:   badge.name,
+          tier:        tierLabel,
+          awardedBy:   adminSession.name,
+          awardedDate: new Date().toISOString(),
+          notes:       note || ''
+        });
+
+        /* PA succeeded — commit locally and refresh UI */
+        const result = awardBadge(sid, badgeId, adminSession, note);
+        if (result.success) {
+          msgEl.innerHTML = `<div class="award-success">✓ ${esc(result.tierLabel)} badge awarded and saved!</div>`;
+          showToast(result.tierLabel + ' badge awarded!', 'success');
+          const searchInput = document.getElementById('studentSearch');
+          setTimeout(() => renderTabStudents(searchInput ? searchInput.value : ''), 900);
+        }
+      } catch (err) {
+        console.error('[Passport] Badge award failed:', err.message);
+        msgEl.innerHTML = '<div class="award-error">Badge could not be saved. Please check your connection and try again.</div>';
+        btn.disabled = false;
+      } finally {
+        hideLoading();
       }
     });
 
