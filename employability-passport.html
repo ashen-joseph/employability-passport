@@ -2060,6 +2060,17 @@
       };
       state.students.push(newStudent);
       saveState();
+
+      /* Silently notify Power Automate so the student appears in OneDrive */
+      callPA(PA_REGISTER_URL, {
+        studentId:        sid,
+        fullName:         name,
+        programme:        prog,
+        registrationDate: newStudent.registeredAt
+      }).catch(err => {
+        console.warn('[Passport] Admin add-student PA notification failed (non-blocking):', err.message);
+      });
+
       showToast('Student added successfully!', 'success');
       switchTab('students');
     });
